@@ -1,0 +1,2185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>智慧资源平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script>
+        // 配置Tailwind自定义主题
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1677ff',
+                        secondary: '#0FC6C2',
+                        success: '#52c41a',
+                        warning: '#faad14',
+                        danger: '#ff4d4f',
+                        gray: {
+                            100: '#f5f5f5',
+                            200: '#e5e5e5',
+                            300: '#d4d4d4',
+                            400: '#a3a3a3',
+                            500: '#737373',
+                            600: '#525252',
+                            700: '#404040',
+                            800: '#262626',
+                            900: '#171717',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['PingFang SC', 'Helvetica Neue', 'Arial', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'card': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                        'elevated': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    }
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .text-shadow {
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            }
+            .animation-delay-300 {
+                animation-delay: 300ms;
+            }
+            .animation-delay-600 {
+                animation-delay: 600ms;
+            }
+        }
+    </style>
+    <style>
+        /* 全局动画定义 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        .animate-pulse {
+            animation: pulse 2s infinite;
+        }
+        .animate-bounce-in {
+            animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        
+        /* 页面容器样式 */
+        .page-container {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+            background-color: #f5f5f5;
+            overflow: hidden;
+        }
+        .page-container.active {
+            display: flex;
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        /* 自定义滚动条 */
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #d4d4d4 #f5f5f5;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f5f5f5;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #d4d4d4;
+            border-radius: 20px;
+        }
+        
+        /* 底部导航栏 */
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background-color: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+        .tab-bar-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #737373;
+            font-size: 10px;
+            flex: 1;
+            height: 100%;
+        }
+        .tab-bar-item.active {
+            color: #1677ff;
+        }
+        .tab-bar-item i {
+            font-size: 20px;
+            margin-bottom: 2px;
+        }
+        
+        /* 顶部导航栏 */
+        .nav-bar {
+            height: 45px;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+        }
+        .nav-bar-title {
+            font-size: 17px;
+            font-weight: 500;
+            color: #171717;
+        }
+        .nav-bar-left, .nav-bar-right {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            height: 100%;
+            padding: 0 15px;
+        }
+        .nav-bar-left {
+            left: 0;
+        }
+        .nav-bar-right {
+            right: 0;
+        }
+        
+        /* 弹窗样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal {
+            background-color: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 350px;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e5e5e5;
+            font-size: 17px;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-body {
+            padding: 20px;
+        }
+        .modal-footer {
+            padding: 10px 20px 15px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        /* 底部弹窗 */
+        .action-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            padding: 20px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        .action-sheet.active {
+            transform: translateY(0);
+        }
+        .action-sheet-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .action-sheet-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .action-sheet-title {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #737373;
+        }
+        .action-sheet-item {
+            padding: 12px 0;
+            text-align: center;
+            font-size: 17px;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .action-sheet-cancel {
+            margin-top: 10px;
+            padding: 12px 0;
+            text-align: center;
+            font-size: 17px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+        }
+        
+        /* 按钮样式 */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-primary {
+            background-color: #1677ff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0958d9;
+        }
+        .btn-secondary {
+            background-color: white;
+            color: #1677ff;
+            border: 1px solid #1677ff;
+        }
+        .btn-secondary:hover {
+            background-color: #f0f7ff;
+        }
+        .btn-danger {
+            background-color: #ff4d4f;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #d9363e;
+        }
+        .btn-large {
+            padding: 12px 24px;
+            font-size: 16px;
+        }
+        .btn-block {
+            display: flex;
+            width: 100%;
+        }
+        
+        /* 卡片样式 */
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .card-header {
+            padding: 15px 15px;
+            border-bottom: 1px solid #f5f5f5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-body {
+            padding: 15px;
+        }
+        .card-footer {
+            padding: 10px 15px;
+            border-top: 1px solid #f5f5f5;
+        }
+        
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #525252;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d4d4d4;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #1677ff;
+        }
+        .form-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d4d4d4;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: white;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+        }
+        
+        /* 提示消息 */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+        }
+        .toast.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        /* 步骤指示器 */
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            height: 2px;
+            background-color: #e5e5e5;
+            z-index: 1;
+        }
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            width: 33.333%;
+        }
+        .step-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: white;
+            border: 2px solid #e5e5e5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 5px;
+        }
+        .step.active .step-icon {
+            background-color: #1677ff;
+            border-color: #1677ff;
+            color: white;
+        }
+        .step.completed .step-icon {
+            background-color: #52c41a;
+            border-color: #52c41a;
+            color: white;
+        }
+        .step-text {
+            font-size: 12px;
+            color: #737373;
+        }
+        .step.active .step-text {
+            color: #1677ff;
+            font-weight: 500;
+        }
+        
+        /* 标签样式 */
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .tag-primary {
+            background-color: #e6f7ff;
+            color: #1890ff;
+        }
+        .tag-success {
+            background-color: #f6ffed;
+            color: #52c41a;
+        }
+        .tag-warning {
+            background-color: #fffbe6;
+            color: #faad14;
+        }
+        .tag-danger {
+            background-color: #fff2f0;
+            color: #ff4d4f;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800 overflow-x-hidden">
+    <!-- 登录页 -->
+    <div id="login-page" class="page-container active">
+        <div class="flex-1 flex flex-col items-center justify-center p-6">
+            <div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-8 animate-bounce-in">
+                <i class="fa fa-database text-4xl text-primary"></i>
+            </div>
+            <h1 class="text-[clamp(1.5rem,5vw,2rem)] font-bold text-gray-800 mb-2">智慧资源平台</h1>
+            <p class="text-gray-500 mb-10 text-center">高效管理商品资源，轻松采集单据信息</p>
+            
+            <button id="wechat-login-btn" class="btn btn-primary btn-large btn-block mb-4 flex items-center justify-center">
+                <i class="fa fa-weixin mr-2"></i> 微信快捷登录
+            </button>
+            
+            <div class="text-gray-400 text-xs mt-8 text-center">
+                登录即表示同意<a href="#" class="text-primary">《用户协议》</a>和<a href="#" class="text-primary">《隐私政策》</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 身份选择页 -->
+    <div id="identity-page" class="page-container">
+        <div class="nav-bar">
+            <div class="nav-bar-title">选择你的身份</div>
+        </div>
+        <div class="flex-1 p-6 overflow-y-auto custom-scrollbar">
+            <div class="mb-8 text-center">
+                <h2 class="text-xl font-bold mb-2">请选择您的身份类型</h2>
+                <p class="text-gray-500">不同身份将获得不同的功能权限</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="identity-card card p-6 cursor-pointer hover:shadow-elevated transition-shadow" data-identity="owner">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
+                            <i class="fa fa-shopping-store text-xl text-primary"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg">店主/经营者</h3>
+                            <p class="text-gray-500 text-sm">管理店铺资源，配置员工权限</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="identity-card card p-6 cursor-pointer hover:shadow-elevated transition-shadow" data-identity="staff">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center mr-4">
+                            <i class="fa fa-user text-xl text-secondary"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg">员工用户</h3>
+                            <p class="text-gray-500 text-sm">采集单据，录入商品信息</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="identity-card card p-6 cursor-pointer hover:shadow-elevated transition-shadow" data-identity="supplier">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mr-4">
+                            <i class="fa fa-truck text-xl text-success"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg">供应商用户</h3>
+                            <p class="text-gray-500 text-sm">上传商品，管理供应信息</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-8">
+                <button id="confirm-identity-btn" class="btn btn-primary btn-block btn-large">确认选择</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 店铺信息页 -->
+    <div id="store-info-page" class="page-container">
+        <div class="nav-bar">
+            <div class="nav-bar-left">
+                <i class="fa fa-arrow-left cursor-pointer" id="back-to-identity"></i>
+            </div>
+            <div class="nav-bar-title">完善店铺信息</div>
+        </div>
+        <div class="flex-1 p-6 overflow-y-auto custom-scrollbar">
+            <div class="mb-6">
+                <h2 class="text-xl font-bold mb-2">请填写店铺基本信息</h2>
+                <p class="text-gray-500">这些信息将用于创建您的店铺账户</p>
+            </div>
+            
+            <form id="store-form">
+                <div class="form-group">
+                    <label class="form-label">店铺名称 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" placeholder="请输入店铺名称" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">所在地区 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" placeholder="请选择所在地区" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">详细地址</label>
+                    <input type="text" class="form-control" placeholder="请输入详细地址">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">联系电话 <span class="text-danger">*</span></label>
+                    <input type="tel" class="form-control" placeholder="请输入联系电话" required>
+                </div>
+                
+                <div class="mt-10">
+                    <button type="button" id="submit-store-info" class="btn btn-primary btn-block btn-large">完成注册</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 首页 -->
+    <div id="home-page" class="page-container">
+        <div class="nav-bar">
+            <div class="nav-bar-left">
+                <i class="fa fa-bell-o text-gray-600"></i>
+            </div>
+            <div class="nav-bar-title">首页</div>
+            <div class="nav-bar-right">
+                <span class="text-primary flex items-center">
+                    <i class="fa fa-diamond mr-1"></i>
+                    <span>100分</span>
+                </span>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-4 pb-60">
+            <!-- 用户信息卡片 -->
+            <div class="card mb-6">
+                <div class="card-body">
+                    <div class="flex items-center">
+                        <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mr-4">
+                            <i class="fa fa-user text-2xl text-primary"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg">王店长</h3>
+                            <p class="text-gray-500 text-sm">XX便利店 · 管理员</p>
+                        </div>
+                        <div class="ml-auto">
+                            <button class="btn btn-secondary text-sm">
+                                <i class="fa fa-qrcode mr-1"></i> 我的二维码
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 快捷功能区 -->
+            <div class="card mb-6">
+                <div class="card-header">
+                    <span class="font-bold">快捷功能</span>
+                </div>
+                <div class="card-body">
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="flex flex-col items-center justify-center p-3 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors" id="goto-document">
+                            <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                                <i class="fa fa-file-text-o text-xl text-primary"></i>
+                            </div>
+                            <span class="text-sm">采集单据</span>
+                        </div>
+                        
+                        <div class="flex flex-col items-center justify-center p-3 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors" id="goto-scan">
+                            <div class="w-14 h-14 rounded-full bg-secondary/10 flex items-center justify-center mb-2">
+                                <i class="fa fa-qrcode text-xl text-secondary"></i>
+                            </div>
+                            <span class="text-sm">扫码商品</span>
+                        </div>
+                        
+                        <div class="flex flex-col items-center justify-center p-3 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors" id="goto-resources">
+                            <div class="w-14 h-14 rounded-full bg-success/10 flex items-center justify-center mb-2">
+                                <i class="fa fa-database text-xl text-success"></i>
+                            </div>
+                            <span class="text-sm">我的资源</span>
+                        </div>
+                        
+                        <div class="flex flex-col items-center justify-center p-3 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors" id="goto-public">
+                            <div class="w-14 h-14 rounded-full bg-warning/10 flex items-center justify-center mb-2">
+                                <i class="fa fa-share-alt text-xl text-warning"></i>
+                            </div>
+                            <span class="text-sm">公有资源</span>
+                        </div>
+                        
+                        <div class="flex flex-col items-center justify-center p-3 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors" id="goto-staff">
+                            <div class="w-14 h-14 rounded-full bg-danger/10 flex items-center justify-center mb-2">
+                                <i class="fa fa-users text-xl text-danger"></i>
+                            </div>
+                            <span class="text-sm">员工管理</span>
+                        </div>
+                        
+                        <div class="flex flex-col items-center justify-center p-3 cursor-pointer hover:bg-gray-100 rounded-lg transition-colors" id="goto-recharge">
+                            <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                                <i class="fa fa-rmb text-xl text-primary"></i>
+                            </div>
+                            <span class="text-sm">积分充值</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 动态通知 -->
+            <div class="card mb-6">
+                <div class="card-header">
+                    <span class="font-bold">动态通知</span>
+                </div>
+                <div class="card-body">
+                    <div class="space-y-4">
+                        <div class="flex items-start p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                            <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mt-1 mr-3 flex-shrink-0">
+                                <i class="fa fa-check text-primary"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm">你的3条单据已同步至平台</p>
+                                <p class="text-xs text-gray-400 mt-1">10分钟前</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                            <div class="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center mt-1 mr-3 flex-shrink-0">
+                                <i class="fa fa-plus text-success"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm">1个商品通过公有库审核 <span class="text-success">+20积分</span></p>
+                                <p class="text-xs text-gray-400 mt-1">1小时前</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                            <div class="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center mt-1 mr-3 flex-shrink-0">
+                                <i class="fa fa-exclamation text-warning"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm">2条单据识别信息需要完善</p>
+                                <p class="text-xs text-gray-400 mt-1">3小时前</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 最近资源 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="font-bold">最近资源</span>
+                    <span class="text-primary text-sm cursor-pointer">查看全部</span>
+                </div>
+                <div class="card-body">
+                    <div class="space-y-3">
+                        <div class="p-3 border border-gray-100 rounded-lg hover:border-primary/30 cursor-pointer transition-colors">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-medium">采购单-20250723</p>
+                                    <p class="text-sm text-gray-500 mt-1">共5项商品 · 已同步</p>
+                                </div>
+                                <i class="fa fa-file-text-o text-primary"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="p-3 border border-gray-100 rounded-lg hover:border-primary/30 cursor-pointer transition-colors">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-medium">农夫山泉（550ml）</p>
+                                    <p class="text-sm text-gray-500 mt-1">私有商品 · 饮料类</p>
+                                </div>
+                                <i class="fa fa-tint text-secondary"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="p-3 border border-gray-100 rounded-lg hover:border-primary/30 cursor-pointer transition-colors">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-medium">可口可乐（330ml）</p>
+                                    <p class="text-sm text-gray-500 mt-1">公有商品 · 饮料类</p>
+                                </div>
+                                <i class="fa fa-glass text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部导航 -->
+        <div class="tab-bar">
+            <div class="tab-bar-item active" data-page="home-page">
+                <i class="fa fa-home"></i>
+                <span>首页</span>
+            </div>
+            <div class="tab-bar-item" data-page="document-page">
+                <i class="fa fa-file-text-o"></i>
+                <span>单据</span>
+            </div>
+            <div class="tab-bar-item" data-page="product-page">
+                <i class="fa fa-cubes"></i>
+                <span>商品</span>
+            </div>
+            <div class="tab-bar-item" data-page="points-page">
+                <i class="fa fa-diamond"></i>
+                <span>积分</span>
+            </div>
+            <div class="tab-bar-item" data-page="profile-page">
+                <i class="fa fa-user-o"></i>
+                <span>我的</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 单据管理页 -->
+    <div id="document-page" class="page-container">
+        <div class="nav-bar">
+            <div class="nav-bar-title">单据管理</div>
+            <div class="nav-bar-right">
+                <i class="fa fa-search text-gray-600 mr-3"></i>
+                <i class="fa fa-ellipsis-v text-gray-600"></i>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto custom-scrollbar pb-60">
+            <!-- 筛选栏 -->
+            <div class="bg-white p-3 overflow-x-auto scrollbar-hide">
+                <div class="flex space-x-4 min-w-max">
+                    <div class="tag tag-primary px-4 py-1 cursor-pointer">全部</div>
+                    <div class="tag px-4 py-1 cursor-pointer">采购单</div>
+                    <div class="tag px-4 py-1 cursor-pointer">入库单</div>
+                    <div class="tag px-4 py-1 cursor-pointer">发票</div>
+                    <div class="tag px-4 py-1 cursor-pointer">销售单</div>
+                </div>
+            </div>
+            
+            <!-- 单据列表 -->
+            <div class="p-4">
+                <div class="space-y-4">
+                    <!-- 单据项1 -->
+                    <div class="card">
+                        <div class="card-body p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex items-center">
+                                    <span class="tag tag-primary mr-2">采购单</span>
+                                    <span class="font-medium">2025-07-23</span>
+                                </div>
+                                <div class="text-gray-500 text-sm">昨天 14:30</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <p class="text-sm mb-1">供应商：XX贸易有限公司</p>
+                                <p class="text-sm">共3项商品 · 总金额：¥2,560.00</p>
+                            </div>
+                            
+                            <div class="flex justify-between items-center pt-2 border-t border-gray-100">
+                                <span class="text-success text-sm"><i class="fa fa-check-circle mr-1"></i> 已同步</span>
+                                <div class="flex space-x-2">
+                                    <button class="text-primary text-sm">查看</button>
+                                    <button class="text-gray-500 text-sm">编辑</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 单据项2 -->
+                    <div class="card">
+                        <div class="card-body p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex items-center">
+                                    <span class="tag tag-warning mr-2">发票</span>
+                                    <span class="font-medium">2025-07-22</span>
+                                </div>
+                                <div class="text-gray-500 text-sm">昨天 10:15</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <p class="text-sm mb-1">发票号码：0087654321</p>
+                                <p class="text-sm">金额：¥1,200.00 · 税率：13%</p>
+                            </div>
+                            
+                            <div class="flex justify-between items-center pt-2 border-t border-gray-100">
+                                <span class="text-warning text-sm"><i class="fa fa-exclamation-circle mr-1"></i> 待完善</span>
+                                <div class="flex space-x-2">
+                                    <button class="text-primary text-sm">查看</button>
+                                    <button class="text-gray-500 text-sm">编辑</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 单据项3 -->
+                    <div class="card">
+                        <div class="card-body p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex items-center">
+                                    <span class="tag tag-success mr-2">入库单</span>
+                                    <span class="font-medium">2025-07-21</span>
+                                </div>
+                                <div class="text-gray-500 text-sm">前天 09:45</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <p class="text-sm mb-1">仓库：主仓库</p>
+                                <p class="text-sm">共8项商品 · 经办人：李小明</p>
+                            </div>
+                            
+                            <div class="flex justify-between items-center pt-2 border-t border-gray-100">
+                                <span class="text-success text-sm"><i class="fa fa-check-circle mr-1"></i> 已同步</span>
+                                <div class="flex space-x-2">
+                                    <button class="text-primary text-sm">查看</button>
+                                    <button class="text-gray-500 text-sm">编辑</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 新增单据按钮 -->
+        <button id="add-document-btn" class="fixed bottom-60 right-6 w-14 h-14 rounded-full bg-primary text-white shadow-elevated flex items-center justify-center">
+            <i class="fa fa-plus text-xl"></i>
+        </button>
+        
+        <!-- 底部导航 -->
+        <div class="tab-bar">
+            <div class="tab-bar-item" data-page="home-page">
+                <i class="fa fa-home"></i>
+                <span>首页</span>
+            </div>
+            <div class="tab-bar-item active" data-page="document-page">
+                <i class="fa fa-file-text-o"></i>
+                <span>单据</span>
+            </div>
+            <div class="tab-bar-item" data-page="product-page">
+                <i class="fa fa-cubes"></i>
+                <span>商品</span>
+            </div>
+            <div class="tab-bar-item" data-page="points-page">
+                <i class="fa fa-diamond"></i>
+                <span>积分</span>
+            </div>
+            <div class="tab-bar-item" data-page="profile-page">
+                <i class="fa fa-user-o"></i>
+                <span>我的</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 单据采集页 -->
+    <div id="document-capture-page" class="page-container">
+        <div class="nav-bar">
+            <div class="nav-bar-left">
+                <i class="fa fa-arrow-left cursor-pointer" id="back-to-document"></i>
+            </div>
+            <div class="nav-bar-title">采集单据</div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-4">
+            <div class="steps">
+                <div class="step active">
+                    <div class="step-icon">1</div>
+                    <div class="step-text">拍摄/上传</div>
+                </div>
+                <div class="step">
+                    <div class="step-icon">2</div>
+                    <div class="step-text">识别校对</div>
+                </div>
+                <div class="step">
+                    <div class="step-icon">3</div>
+                    <div class="step-text">完成</div>
+                </div>
+            </div>
+            
+            <div class="card mb-6">
+                <div class="card-body">
+                    <div class="aspect-video bg-gray-100 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden">
+                        <i class="fa fa-camera text-4xl text-gray-400"></i>
+                        <div class="absolute bottom-2 right-2 bg-primary/80 text-white text-xs px-2 py-1 rounded">
+                            点击拍摄
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-4 gap-2 mb-4">
+                        <div class="aspect-square bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300 cursor-pointer">
+                            <i class="fa fa-plus text-gray-400"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">单据类型 <span class="text-danger">*</span></label>
+                        <select class="form-select">
+                            <option value="">请选择单据类型</option>
+                            <option value="purchase">采购单</option>
+                            <option value="stock-in">入库单</option>
+                            <option value="invoice">发票</option>
+                            <option value="sale">销售单</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">备注</label>
+                <textarea class="form-control" rows="3" placeholder="请输入备注信息（可选）"></textarea>
+            </div>
+            
+            <div class="mt-8">
+                <button id="start-ocr-btn" class="btn btn-primary btn-block btn-large">开始识别 <span class="text-xs ml-1">(-2积分)</span></button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 单据识别校对页 -->
+    <div id="document-verify-page" class="page-container">
+        <div class="nav-bar">
+            <div class="nav-bar-left">
+                <i class="fa fa-arrow-left cursor-pointer" id="back-to-capture"></i>
+            </div>
+            <div class="nav-bar-title">校对单据</div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-4">
+            <div class="steps">
+                <div class="step completed">
+                    <div class="step-icon">
+                        <i class="fa fa-check"></i>
+                    </div>
+                    <div class="step-text">拍摄/上传</div>
+                </div>
+                <div class="step active">
+                    <div class="step-icon">2</div>
+                    <div class="step-text">识别校对</div>
+                </div>
+                <div class="step">
+                    <div class="step-icon">3</div>
+                    <div class="step-text">完成</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <!-- 左侧：原始图片 -->
+                <div>
+                    <p class="text-sm text-gray-500 mb-2">原始单据</p>
+                    <div class="bg-gray-100 rounded-lg overflow-hidden">
+                        <img src="https://picsum.photos/400/500" alt="单据图片" class="w-full">
+                    </div>
+                    <div class="flex justify-center mt-3 space-x-3">
+                        <button class="btn btn-secondary text-sm">
+                            <i class="fa fa-refresh mr-1"></i> 重新拍摄
+                        </button>
+                        <button class="btn btn-secondary text-sm">
+                            <i class="fa fa-rotate-right mr-1"></i> 旋转
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 右侧：识别结果 -->
+                <div>
+                    <p class="text-sm text-gray-500 mb-2">识别结果</p>
+                    <div class="bg-white rounded-lg border border-gray-200 p-3">
+                        <div class="form-group">
+                            <label class="form-label">单据类型</label>
+                            <select class="form-select">
+                                <option value="purchase" selected>采购单</option>
+                                <option value="stock-in">入库单</option>
+                                <option value="invoice">发票</option>
+                                <option value="sale">销售单</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">日期</label>
+                            <input type="date" class="form-control" value="2025-07-23">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">供应商</label>
+                            <input type="text" class="form-control" value="XX贸易有限公司">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">商品列表</label>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-2 border border-gray-100 rounded">
+                                    <div>
+                                        <p>农夫山泉 550ml</p>
+                                        <p class="text-xs text-gray-500">条码：6921168509256</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p>数量：20</p>
+                                        <p class="text-xs text-gray-500">单价：2.00</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-2 border border-gray-100 rounded">
+                                    <div>
+                                        <p>可口可乐 330ml</p>
+                                        <p class="text-xs text-gray-500">条码：6923450657713</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p>数量：15</p>
+                                        <p class="text-xs text-gray-500">单价：2.50</p>
+                                    </div>
+                                </div>
+                                
+                                <button class="w-full py-2 border border-dashed border-gray-300 rounded text-gray-500 text-sm flex items-center justify-center">
+                                    <i class="fa fa-plus mr-1"></i> 添加商品
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">总金额</label>
+                            <input type="text" class="form-control" value="87.50">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex space-x-4">
+                <button class="btn btn-secondary btn-block">保存草稿</button>
+                <button id="confirm-document-btn" class="btn btn-primary btn-block">确认提交 <span class="text-xs ml-1">(+5积分)</span></button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 扫码商品页 -->
+    <div id="scan-page" class="page-container">
+        <div class="nav-bar">
+            <div class="nav-bar-left">
+                <i class="fa fa-arrow-left cursor-pointer" id="back-to-home"></i>
+            </div>
+            <div class="nav-bar-title">扫码商品</div>
+            <div class="nav-bar-right">
+                <i class="fa fa-lightbulb-o text-gray-600" id="toggle-flashlight"></i>
+            </div>
+        </div>
+        
+        <div class="flex-1 flex flex-col items-center justify-center bg-black p-4">
+            <!-- 扫码框 -->
+            <div class="relative w-full max-w-md aspect-square">
+                <!-- 扫码框外区域半透明遮罩 -->
+                <div class="absolute inset-0 bg-black/70">
+                    <div class="absolute inset-x-[20%] inset-y-[30%] bg-transparent border-2 border-white"></div>
+                </div>
+                
+                <!-- 扫描线动画 -->
+                <div class="absolute inset-x-[22%] top-[32%] h-0.5 bg-primary animate-pulse"></div>
+            </div>
+            
+            <div class="mt-8 text-white text-center">
+                <p class="mb-2">请对准商品的条码或二维码</p>
+                <button class="text-primary underline" id="manual-input-btn">手动输入商品信息</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 商品详情页（私有库） -->
+    <div id="product-detail-page" class="page-container">
+        <div class="nav-bar">
+            <div class="nav-bar-left">
+                <i class="fa fa-arrow-left cursor-pointer" id="back-to-scan"></i>
+            </div>
+            <div class="nav-bar-title">商品详情</div>
+            <div class="nav-bar-right">
+                <i class="fa fa-ellipsis-v text-gray-600"></i>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-4">
+            <div class="card mb-6">
+                <div class="card-body">
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <!-- 商品图片 -->
+                        <div class="w-full md:w-1/3">
+                            <div class="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                                <img src="https://picsum.photos/300/300?random=1" alt="农夫山泉矿泉水" class="w-full h-full object-cover">
+                            </div>
+                        </div>
+                        
+                        <!-- 商品信息 -->
+                        <div class="w-full md:w-2/3">
+                            <div class="flex items-center mb-2">
+                                <h2 class="text-xl font-bold mr-2">农夫山泉 550ml</h2>
+                                <span class="tag tag-primary">私有商品</span>
+                            </div>
+                            
+                            <div class="space-y-2 text-sm">
+                                <div class="flex">
+                                    <span class="text-gray-500 w-24">条码：</span>
+                                    <span>6921168509256</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="text-gray-500 w-24">品牌：</span>
+                                    <span>农夫山泉</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="text-gray-500 w-24">规格：</span>
+                                    <span>550ml/瓶</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="text-gray-500 w-24">类目：</span>
+                                    <span>饮料 > 饮用水</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="text-gray-500 w-24">单价：</span>
+                                    <span>¥2.00</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="text-gray-500 w-24">库存：</span>
+                                    <span>120瓶</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="text-gray-500 w-24">标签：</span>
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="tag">畅销</span>
+                                        <span class="tag">饮品</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 操作按钮 -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <button class="btn btn-secondary btn-block">
+                    <i class="fa fa-file-text-o mr-1"></i> 关联到单据
+                </button>
+                <button class="btn btn-secondary btn-block">
+                    <i class="fa fa-share-alt mr-1"></i> 贡献到公有库
+                </button>
+            </div>
+            
+            <!-- 纠错区域 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="font-bold">发现信息错误？</span>
+                </div>
+                <div class="card-body">
+                    <p class="text-sm text-gray-500 mb-3">您可以提交纠错信息，帮助完善商品档案</p>
+                    
+                    <div class="form-group">
+                        <label class="form-label">纠错内容</label>
+                        <textarea class="form-control" rows="3" placeholder="请描述错误信息及正确内容"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">上传证明（可选）</label>
+                        <div class="border border-dashed border-gray-300 rounded-lg p-4 text-center">
+                            <i class="fa fa-upload text-gray-400 text-2xl mb-2"></i>
+                            <p class="text-sm text-gray-500">点击上传图片证明</p>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary btn-block mt-4">提交纠错 <span class="text-xs ml-1">(审核通过+30积分)</span></button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部导航 -->
+        <div class="tab-bar">
+            <div class="tab-bar-item" data-page="home-page">
+                <i class="fa fa-home"></i>
+                <span>首页</span>
+            </div>
+            <div class="tab-bar-item" data-page="document-page">
+                <i class="fa fa-file-text-o"></i>
+                <span>单据</span>
+            </div>
+            <div class="tab-bar-item active" data-page="product-page">
+                <i class="fa fa-cubes"></i>
+                <span>商品</span>
+            </div>
+            <div class="tab-bar-item" data-page="points-page">
+                <i class="fa fa-diamond"></i>
+                <span>积分</span>
+            </div>
+            <div class="tab-bar-item" data-page="profile-page">
+                <i class="fa fa-user-o"></i>
+                <span>我的</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 公有商品导入页 -->
+    <div id="import-public-product-page" class="page-container">
+        <div class="nav-bar">
+            <div class="nav-bar-left">
+                <i class="fa fa-arrow-left cursor-pointer" id="back-to-scan-2"></i>
+            </div>
+            <div class="nav-bar-title">导入公有商品</div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-4">
+            <div class="card mb-6">
+                <div class="card-header">
+                    <span class="font-bold">发现公有商品</span>
+                </div>
+                <div class="card-body">
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <!-- 商品图片 -->
+                        <div class="w-full md:w-1/3">
+                            <div class="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                                <img src="https://picsum.photos/300/300?random=2" alt="可口可乐" class="w-full h-full object-cover">
+                            </div>
+                        </div>
+                        
+                        <!-- 商品信息 -->
+                        <div class="w-full md:w-2/3">
+                            <h2 class="text-xl font-bold mb-2">可口可乐 330ml</h2>
+                            
+                            <div class="space-y-2 text-sm mb-4">
+                                <div class="flex">
+                                    <span class="text-gray-500 w-24">条码：</span>
+                                    <span>6923450657713</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="text-gray-500 w-24">品牌：</span>
+                                    <span>可口可乐</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="text-gray-500 w-24">规格：</span>
+                                    <span>330ml/罐</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="text-gray-500 w-24">类目：</span>
+                                    <span>饮料 > 碳酸饮料</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="text-gray-500 w-24">上传者：</span>
+                                    <span>XX供应商</span>
+                                </div>
+                                <div class="flex">
+                                    <span class="text-gray-500 w-24">状态：</span>
+                                    <span class="text-success">审核通过</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 补充信息 -->
+            <div class="card mb-6">
+                <div class="card-header">
+                    <span class="font-bold">补充店铺信息（可选）</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">本店铺售价</label>
+                        <input type="number" step="0.01" class="form-control" placeholder="请输入本店铺售价">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">库存数量</label>
+                        <input type="number" class="form-control" placeholder="请输入库存数量">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">自定义标签</label>
+                        <input type="text" class="form-control" placeholder="请输入标签，多个用逗号分隔">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">备注</label>
+                        <textarea class="form-control" rows="2" placeholder="请输入备注信息"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="save-to-private-btn" class="btn btn-primary btn-block btn-large">保存至私有库 <span class="text-xs ml-1">(+10积分)</span></button>
+        </div>
+    </div>
+    
+    <!-- 新增商品页 -->
+    <div id="add-product-page" class="page-container">
+        <div class="nav-bar">
+            <div class="nav-bar-left">
+                <i class="fa fa-arrow-left cursor-pointer" id="back-to-scan-3"></i>
+            </div>
+            <div class="nav-bar-title">新增商品</div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-4">
+            <div class="card mb-6">
+                <div class="card-header">
+                    <span class="font-bold">商品基本信息</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">商品图片</label>
+                        <div class="border border-dashed border-gray-300 rounded-lg p-4 text-center mb-4">
+                            <i class="fa fa-camera text-gray-400 text-2xl mb-2"></i>
+                            <p class="text-sm text-gray-500">点击上传商品图片</p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">条码 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" placeholder="请输入商品条码" value="6932275100014">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">商品名称 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" placeholder="请输入商品名称">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">品牌</label>
+                        <input type="text" class="form-control" placeholder="请输入品牌名称">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">规格</label>
+                        <input type="text" class="form-control" placeholder="请输入商品规格，如500ml/瓶">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">单位 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" placeholder="请输入计量单位，如瓶、个、kg">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">商品类目 <span class="text-danger">*</span></label>
+                        <select class="form-select">
+                            <option value="">请选择商品类目</option>
+                            <option value="food">食品</option>
+                            <option value="drink">饮料</option>
+                            <option value="daily">日用品</option>
+                            <option value="electronics">电子产品</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-6">
+                <div class="card-header">
+                    <span class="font-bold">店铺信息（可选）</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">售价</label>
+                        <input type="number" step="0.01" class="form-control" placeholder="请输入售价">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">库存数量</label>
+                        <input type="number" class="form-control" placeholder="请输入库存数量">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">标签</label>
+                        <input type="text" class="form-control" placeholder="请输入标签，多个用逗号分隔">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="flex items-center">
+                    <input type="checkbox" class="mr-2">
+                    <span>同时贡献为公有商品（审核通过+20积分）</span>
+                </label>
+            </div>
+            
+            <button id="save-new-product-btn" class="btn btn-primary btn-block btn-large mt-4">保存商品 <span class="text-xs ml-1">(+10积分)</span></button>
+        </div>
+    </div>
+    
+    <!-- 商品库页面 -->
+    <div id="product-page" class="page-container">
+        <div class="nav-bar">
+            <div class="nav-bar-title">商品库</div>
+            <div class="nav-bar-right">
+                <i class="fa fa-search text-gray-600 mr-3"></i>
+                <div class="relative">
+                    <button id="filter-btn" class="flex items-center">
+                        <i class="fa fa-filter text-gray-600"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto custom-scrollbar pb-60">
+            <!-- 切换标签 -->
+            <div class="bg-white border-b border-gray-200">
+                <div class="flex">
+                    <div class="px-6 py-3 font-medium text-primary border-b-2 border-primary">私有库</div>
+                    <div class="px-6 py-3 font-medium text-gray-500">公有库</div>
+                </div>
+            </div>
+            
+            <!-- 商品列表 -->
+            <div class="p-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- 商品项1 -->
+                    <div class="card overflow-hidden cursor-pointer hover:shadow-elevated transition-shadow">
+                        <div class="aspect-square bg-gray-100 relative">
+                            <img src="https://picsum.photos/300/300?random=1" alt="农夫山泉矿泉水" class="w-full h-full object-cover">
+                            <div class="absolute top-2 left-2">
+                                <span class="tag tag-primary text-xs">私有</span>
+                            </div>
+                        </div>
+                        <div class="p-3">
+                            <h3 class="font-medium text-sm truncate">农夫山泉 550ml</h3>
+                            <p class="text-gray-500 text-xs mt-1">饮料类 · 2.00元</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 商品项2 -->
+                    <div class="card overflow-hidden cursor-pointer hover:shadow-elevated transition-shadow">
+                        <div class="aspect-square bg-gray-100 relative">
+                            <img src="https://picsum.photos/300/300?random=2" alt="可口可乐" class="w-full h-full object-cover">
+                            <div class="absolute top-2 left-2">
+                                <span class="tag tag-primary text-xs">私有</span>
+                            </div>
+                        </div>
+                        <div class="p-3">
+                            <h3 class="font-medium text-sm truncate">可口可乐 330ml</h3>
+                            <p class="text-gray-500 text-xs mt-1">饮料类 · 2.50元</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 商品项3 -->
+                    <div class="card overflow-hidden cursor-pointer hover:shadow-elevated transition-shadow">
+                        <div class="aspect-square bg-gray-100 relative">
+                            <img src="https://picsum.photos/300/300?random=3" alt="康师傅方便面" class="w-full h-full object-cover">
+                            <div class="absolute top-2 left-2">
+                                <span class="tag tag-primary text-xs">私有</span>
+                            </div>
+                        </div>
+                        <div class="p-3">
+                            <h3 class="font-medium text-sm truncate">康师傅红烧牛肉面</h3>
+                            <p class="text-gray-500 text-xs mt-1">食品类 · 4.50元</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 商品项4 -->
+                    <div class="card overflow-hidden cursor-pointer hover:shadow-elevated transition-shadow">
+                        <div class="aspect-square bg-gray-100 relative">
+                            <img src="https://picsum.photos/300/300?random=4" alt="乐事薯片" class="w-full h-full object-cover">
+                            <div class="absolute top-2 left-2">
+                                <span class="tag tag-primary text-xs">私有</span>
+                            </div>
+                        </div>
+                        <div class="p-3">
+                            <h3 class="font-medium text-sm truncate">乐事薯片 原味 100g</h3>
+                            <p class="text-gray-500 text-xs mt-1">食品类 · 6.50元</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 新增商品按钮 -->
+        <button id="add-product-btn" class="fixed bottom-60 right-6 w-14 h-14 rounded-full bg-primary text-white shadow-elevated flex items-center justify-center">
+            <i class="fa fa-plus text-xl"></i>
+        </button>
+        
+        <!-- 底部导航 -->
+        <div class="tab-bar">
+            <div class="tab-bar-item" data-page="home-page">
+                <i class="fa fa-home"></i>
+                <span>首页</span>
+            </div>
+            <div class="tab-bar-item" data-page="document-page">
+                <i class="fa fa-file-text-o"></i>
+                <span>单据</span>
+            </div>
+            <div class="tab-bar-item active" data-page="product-page">
+                <i class="fa fa-cubes"></i>
+                <span>商品</span>
+            </div>
+            <div class="tab-bar-item" data-page="points-page">
+                <i class="fa fa-diamond"></i>
+                <span>积分</span>
+            </div>
+            <div class="tab-bar-item" data-page="profile-page">
+                <i class="fa fa-user-o"></i>
+                <span>我的</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 积分中心页 -->
+    <div id="points-page" class="page-container">
+        <div class="nav-bar">
+            <div class="nav-bar-title">积分中心</div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-4">
+            <!-- 积分总览 -->
+            <div class="card mb-6">
+                <div class="card-body p-6 text-center">
+                    <h2 class="text-gray-500 mb-2">当前可用积分</h2>
+                    <div class="text-4xl font-bold text-primary mb-4">100</div>
+                    <div class="flex justify-center space-x-4">
+                        <button class="btn btn-primary">
+                            <i class="fa fa-rmb mr-1"></i> 充值积分
+                        </button>
+                        <button class="btn btn-secondary">
+                            <i class="fa fa-info-circle mr-1"></i> 积分规则
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 充值选项 -->
+            <div class="card mb-6">
+                <div class="card-header">
+                    <span class="font-bold">快捷充值</span>
+                </div>
+                <div class="card-body">
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="border border-gray-200 rounded-lg p-4 text-center cursor-pointer hover:border-primary transition-colors">
+                            <div class="text-lg font-bold">¥10</div>
+                            <div class="text-gray-500 text-sm">= 100积分</div>
+                        </div>
+                        <div class="border border-gray-200 rounded-lg p-4 text-center cursor-pointer hover:border-primary transition-colors">
+                            <div class="text-lg font-bold">¥50</div>
+                            <div class="text-gray-500 text-sm">= 550积分</div>
+                        </div>
+                        <div class="border border-gray-200 rounded-lg p-4 text-center cursor-pointer hover:border-primary transition-colors">
+                            <div class="text-lg font-bold">¥100</div>
+                            <div class="text-gray-500 text-sm">= 1200积分</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 积分明细 -->
+            <div class="card mb-6">
+                <div class="card-header">
+                    <span class="font-bold">积分明细</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="divide-y">
+                        <div class="p-4 flex justify-between items-center">
+                            <div>
+                                <div class="font-medium">提交采购单</div>
+                                <div class="text-gray-500 text-sm">2025-07-23 14:30</div>
+                            </div>
+                            <div class="text-success font-medium">+5</div>
+                        </div>
+                        <div class="p-4 flex justify-between items-center">
+                            <div>
+                                <div class="font-medium">完善商品信息</div>
+                                <div class="text-gray-500 text-sm">2025-07-22 10:15</div>
+                            </div>
+                            <div class="text-success font-medium">+10</div>
+                        </div>
+                        <div class="p-4 flex justify-between items-center">
+                            <div>
+                                <div class="font-medium">OCR识别单据</div>
+                                <div class="text-gray-500 text-sm">2025-07-22 09:45</div>
+                            </div>
+                            <div class="text-danger font-medium">-2</div>
+                        </div>
+                        <div class="p-4 flex justify-between items-center">
+                            <div>
+                                <div class="font-medium">注册赠送</div>
+                                <div class="text-gray-500 text-sm">2025-07-210 16:20</div>
+                            </div>
+                            <div class="text-success font-medium">+100</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 本月排行榜 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="font-bold">本月排行榜</span>
+                    <span class="text-primary text-sm cursor-pointer">查看全平台</span>
+                </div>
+                <div class="card-body">
+                    <div class="space-y-3">
+                        <div class="flex items-center p-2">
+                            <div class="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold mr-3">1</div>
+                            <div class="flex-1">
+                                <div class="font-medium">张店长（本店铺）</div>
+                                <div class="text-gray-500 text-sm">580积分</div>
+                            </div>
+                            <i class="fa fa-trophy text-warning"></i>
+                        </div>
+                        <div class="flex items-center p-2">
+                            <div class="w-6 h-6 rounded-full bg-gray-300 text-gray-700 flex items-center justify-center text-xs font-bold mr-3">2</div>
+                            <div class="flex-1">
+                                <div class="font-medium">李员工（本店铺）</div>
+                                <div class="text-gray-500 text-sm">320积分</div>
+                            </div>
+                            <i class="fa fa-trophy text-gray-400"></i>
+                        </div>
+                        <div class="flex items-center p-2">
+                            <div class="w-6 h-6 rounded-full bg-amber-600 text-white flex items-center justify-center text-xs font-bold mr-3">3</div>
+                            <div class="flex-1">
+                                <div class="font-medium">王店长（本店铺）</div>
+                                <div class="text-gray-500 text-sm">100积分</div>
+                            </div>
+                            <i class="fa fa-trophy text-amber-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部导航 -->
+        <div class="tab-bar">
+            <div class="tab-bar-item" data-page="home-page">
+                <i class="fa fa-home"></i>
+                <span>首页</span>
+            </div>
+            <div class="tab-bar-item" data-page="document-page">
+                <i class="fa fa-file-text-o"></i>
+                <span>单据</span>
+            </div>
+            <div class="tab-bar-item" data-page="product-page">
+                <i class="fa fa-cubes"></i>
+                <span>商品</span>
+            </div>
+            <div class="tab-bar-item active" data-page="points-page">
+                <i class="fa fa-diamond"></i>
+                <span>积分</span>
+            </div>
+            <div class="tab-bar-item" data-page="profile-page">
+                <i class="fa fa-user-o"></i>
+                <span>我的</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 个人中心页 -->
+    <div id="profile-page" class="page-container">
+        <div class="nav-bar">
+            <div class="nav-bar-title">我的</div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-4">
+            <!-- 用户信息 -->
+            <div class="card mb-6">
+                <div class="card-body p-6">
+                    <div class="flex items-center">
+                        <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mr-4">
+                            <i class="fa fa-user text-2xl text-primary"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg">王店长</h3>
+                            <p class="text-gray-500 text-sm">XX便利店 · 管理员</p>
+                            <p class="text-gray-500 text-xs mt-1">租户ID：T202507001</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 功能列表 -->
+            <div class="space-y-1 mb-6">
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="flex items-center p-4 cursor-pointer">
+                            <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                                <i class="fa fa-users text-primary"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium">员工管理</div>
+                                <div class="text-gray-500 text-sm">管理店铺员工及权限</div>
+                            </div>
+                            <i class="fa fa-angle-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="flex items-center p-4 cursor-pointer">
+                            <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center mr-3">
+                                <i class="fa fa-database text-secondary"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium">私有资源库</div>
+                                <div class="text-gray-500 text-sm">28个商品 / 56条单据</div>
+                            </div>
+                            <i class="fa fa-angle-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="flex items-center p-4 cursor-pointer">
+                            <div class="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center mr-3">
+                                <i class="fa fa-key text-success"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium">权限设置</div>
+                                <div class="text-gray-500 text-sm">管理员权限</div>
+                            </div>
+                            <i class="fa fa-angle-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="flex items-center p-4 cursor-pointer">
+                            <div class="w-10 h-10 rounded-full bg-warning/10 flex items-center justify-center mr-3">
+                                <i class="fa fa-hdd-o text-warning"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium">本地数据管理</div>
+                                <div class="text-gray-500 text-sm">已缓存120MB</div>
+                            </div>
+                            <button class="text-primary text-sm mr-2">清理缓存</button>
+                            <i class="fa fa-angle-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 其他功能 -->
+            <div class="space-y-1">
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="flex items-center p-4 cursor-pointer">
+                            <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                                <i class="fa fa-question-circle text-gray-600"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium">帮助中心</div>
+                                <div class="text-gray-500 text-sm">常见问题与操作指南</div>
+                            </div>
+                            <i class="fa fa-angle-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="flex items-center p-4 cursor-pointer">
+                            <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                                <i class="fa fa-sign-out text-gray-600"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium">退出登录</div>
+                            </div>
+                            <i class="fa fa-angle-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center text-gray-400 text-xs mt-8">
+                版本号 v1.0.0
+            </div>
+        </div>
+        
+        <!-- 底部导航 -->
+        <div class="tab-bar">
+            <div class="tab-bar-item" data-page="home-page">
+                <i class="fa fa-home"></i>
+                <span>首页</span>
+            </div>
+            <div class="tab-bar-item" data-page="document-page">
+                <i class="fa fa-file-text-o"></i>
+                <span>单据</span>
+            </div>
+            <div class="tab-bar-item" data-page="product-page">
+                <i class="fa fa-cubes"></i>
+                <span>商品</span>
+            </div>
+            <div class="tab-bar-item" data-page="points-page">
+                <i class="fa fa-diamond"></i>
+                <span>积分</span>
+            </div>
+            <div class="tab-bar-item active" data-page="profile-page">
+                <i class="fa fa-user-o"></i>
+                <span>我的</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 提示消息组件 -->
+    <div id="toast" class="toast">操作成功</div>
+    
+    <!-- 确认弹窗 -->
+    <div id="confirm-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <span>确认操作</span>
+                <i class="fa fa-times text-gray-400 cursor-pointer" id="close-confirm-modal"></i>
+            </div>
+            <div class="modal-body">
+                <p>您确定要删除这条单据吗？</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancel-confirm">取消</button>
+                <button class="btn btn-danger" id="confirm-action">确认</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 新增单据底部弹窗 -->
+    <div id="add-document-sheet" class="action-sheet">
+        <div class="action-sheet-title">请选择单据来源</div>
+        <div class="action-sheet-item" id="take-photo">拍照</div>
+        <div class="action-sheet-item" id="choose-photo">从相册选择</div>
+        <div class="action-sheet-cancel" id="cancel-add-document">取消</div>
+    </div>
+    <div id="add-document-overlay" class="action-sheet-overlay"></div>
+    
+    <script>
+        // 页面切换功能
+        function showPage(pageId) {
+            document.querySelectorAll('.page-container').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+        }
+        
+        // 底部导航切换
+        document.querySelectorAll('.tab-bar-item').forEach(item => {
+            item.addEventListener('click', function() {
+                // 移除所有激活状态
+                document.querySelectorAll('.tab-bar-item').forEach(i => {
+                    i.classList.remove('active');
+                });
+                // 添加当前激活状态
+                this.classList.add('active');
+                // 显示对应页面
+                const pageId = this.getAttribute('data-page');
+                showPage(pageId);
+            });
+        });
+        
+        // 登录流程
+        document.getElementById('wechat-login-btn').addEventListener('click', function() {
+            // 显示登录成功提示
+            showToast('登录成功，获得100积分');
+            
+            // 延迟切换到身份选择页
+            setTimeout(() => {
+                showPage('identity-page');
+            }, 1500);
+        });
+        
+        // 身份选择
+        let selectedIdentity = null;
+        document.querySelectorAll('.identity-card').forEach(card => {
+            card.addEventListener('click', function() {
+                // 移除所有选中状态
+                document.querySelectorAll('.identity-card').forEach(c => {
+                    c.classList.remove('border-primary', 'border-2');
+                });
+                // 添加当前选中状态
+                this.classList.add('border-primary', 'border-2');
+                // 记录选中的身份
+                selectedIdentity = this.getAttribute('data-identity');
+            });
+        });
+        
+        // 确认身份选择
+        document.getElementById('confirm-identity-btn').addEventListener('click', function() {
+            if (!selectedIdentity) {
+                showToast('请选择身份类型');
+                return;
+            }
+            
+            // 如果选择店主身份，跳转到店铺信息页
+            if (selectedIdentity === 'owner') {
+                showPage('store-info-page');
+            } else {
+                // 其他身份直接进入首页
+                showToast('身份选择成功');
+                setTimeout(() => {
+                    showPage('home-page');
+                }, 1000);
+            }
+        });
+        
+        // 返回按钮 - 从店铺信息页到身份选择页
+        document.getElementById('back-to-identity').addEventListener('click', function() {
+            showPage('identity-page');
+        });
+        
+        // 提交店铺信息
+        document.getElementById('submit-store-info').addEventListener('click', function() {
+            showToast('店铺信息提交成功');
+            setTimeout(() => {
+                showPage('home-page');
+            }, 1000);
+        });
+        
+        // 首页快捷功能跳转
+        document.getElementById('goto-document').addEventListener('click', function() {
+            showPage('document-page');
+            // 更新底部导航状态
+            document.querySelectorAll('.tab-bar-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-page') === 'document-page') {
+                    item.classList.add('active');
+                }
+            });
+        });
+        
+        document.getElementById('goto-scan').addEventListener('click', function() {
+            showPage('scan-page');
+        });
+        
+        document.getElementById('goto-resources').addEventListener('click', function() {
+            showPage('product-page');
+            // 更新底部导航状态
+            document.querySelectorAll('.tab-bar-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-page') === 'product-page') {
+                    item.classList.add('active');
+                }
+            });
+        });
+        
+        document.getElementById('goto-public').addEventListener('click', function() {
+            showToast('公有资源页面');
+        });
+        
+        document.getElementById('goto-staff').addEventListener('click', function() {
+            showToast('员工管理页面');
+        });
+        
+        document.getElementById('goto-recharge').addEventListener('click', function() {
+            showPage('points-page');
+            // 更新底部导航状态
+            document.querySelectorAll('.tab-bar-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-page') === 'points-page') {
+                    item.classList.add('active');
+                }
+            });
+        });
+        
+        // 单据管理页 - 新增单据按钮
+        document.getElementById('add-document-btn').addEventListener('click', function() {
+            // 显示底部弹窗
+            document.getElementById('add-document-sheet').classList.add('active');
+            document.getElementById('add-document-overlay').classList.add('active');
+        });
+        
+        // 关闭新增单据弹窗
+        document.getElementById('cancel-add-document').addEventListener('click', function() {
+            document.getElementById('add-document-sheet').classList.remove('active');
+            document.getElementById('add-document-overlay').classList.remove('active');
+        });
+        
+        document.getElementById('add-document-overlay').addEventListener('click', function() {
+            document.getElementById('add-document-sheet').classList.remove('active');
+            document.getElementById('add-document-overlay').classList.remove('active');
+        });
+        
+        // 选择拍照或相册
+        document.getElementById('take-photo').addEventListener('click', function() {
+            document.getElementById('add-document-sheet').classList.remove('active');
+            document.getElementById('add-document-overlay').classList.remove('active');
+            showPage('document-capture-page');
+        });
+        
+        document.getElementById('choose-photo').addEventListener('click', function() {
+            document.getElementById('add-document-sheet').classList.remove('active');
+            document.getElementById('add-document-overlay').classList.remove('active');
+            showPage('document-capture-page');
+        });
+        
+        // 单据采集页返回
+        document.getElementById('back-to-document').addEventListener('click', function() {
+            showPage('document-page');
+        });
+        
+        // 开始OCR识别
+        document.getElementById('start-ocr-btn').addEventListener('click', function() {
+            showPage('document-verify-page');
+        });
+        
+        // 单据校对页返回
+        document.getElementById('back-to-capture').addEventListener('click', function() {
+            showPage('document-capture-page');
+        });
+        
+        // 确认提交单据
+        document.getElementById('confirm-document-btn').addEventListener('click', function() {
+            showToast('单据提交成功，+5积分');
+            setTimeout(() => {
+                showPage('document-page');
+            }, 1500);
+        });
+        
+        // 扫码页返回
+        document.getElementById('back-to-home').addEventListener('click', function() {
+            showPage('home-page');
+        });
+        
+        // 切换闪光灯
+        document.getElementById('toggle-flashlight').addEventListener('click', function() {
+            this.classList.toggle('text-primary');
+            showToast(this.classList.contains('text-primary') ? '闪光灯已开启' : '闪光灯已关闭');
+        });
+        
+        // 手动输入商品
+        document.getElementById('manual-input-btn').addEventListener('click', function() {
+            showPage('add-product-page');
+        });
+        
+        // 模拟扫码结果 - 点击扫码框区域
+        document.querySelector('#scan-page .aspect-square').addEventListener('click', function() {
+            // 随机模拟三种情况：私有商品、公有商品、新商品
+            const random = Math.random();
+            if (random < 0.4) {
+                // 私有商品
+                showPage('product-detail-page');
+            } else if (random < 0.7) {
+                // 公有商品
+                showPage('import-public-product-page');
+            } else {
+                // 新商品
+                showPage('add-product-page');
+            }
+        });
+        
+        // 商品详情页返回
+        document.getElementById('back-to-scan').addEventListener('click', function() {
+            showPage('scan-page');
+        });
+        
+        // 公有商品导入页返回
+        document.getElementById('back-to-scan-2').addEventListener('click', function() {
+            showPage('scan-page');
+        });
+        
+        // 保存至私有库
+        document.getElementById('save-to-private-btn').addEventListener('click', function() {
+            showToast('保存成功，+10积分');
+            setTimeout(() => {
+                showPage('product-page');
+                // 更新底部导航状态
+                document.querySelectorAll('.tab-bar-item').forEach(item => {
+                    item.classList.remove('active');
+                    if (item.getAttribute('data-page') === 'product-page') {
+                        item.classList.add('active');
+                    }
+                });
+            }, 1500);
+        });
+        
+        // 新增商品页返回
+        document.getElementById('back-to-scan-3').addEventListener('click', function() {
+            showPage('scan-page');
+        });
+        
+        // 保存新商品
+        document.getElementById('save-new-product-btn').addEventListener('click', function() {
+            showToast('商品保存成功，+10积分');
+            setTimeout(() => {
+                showPage('product-page');
+                // 更新底部导航状态
+                document.querySelectorAll('.tab-bar-item').forEach(item => {
+                    item.classList.remove('active');
+                    if (item.getAttribute('data-page') === 'product-page') {
+                        item.classList.add('active');
+                    }
+                });
+            }, 1500);
+        });
+        
+        // 商品库页面 - 新增商品按钮
+        document.getElementById('add-product-btn').addEventListener('click', function() {
+            showPage('add-product-page');
+        });
+        
+        // 显示提示消息
+        function showToast(message, duration = 2000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('active');
+            
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, duration);
+        }
+    </script>
+</body>
+</html>
